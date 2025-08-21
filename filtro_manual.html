@@ -150,37 +150,55 @@
 
         function descargarTXT(tipo) {
             if (tipo === 'ventas' || tipo === 'ambos') {
-                const ventasTexto = globalDataRows.map(row => {
-                    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
-                    
-                    let fecha = String(getCellValue("FECHA")).trim();
-                    const año = fecha.slice(-4);
-                    const mes = fecha.slice(3, 5);
-                    const dia = fecha.slice(0, 2);
-                    fecha = `${año}${mes}${dia}`;
+const ventasTexto = globalDataRows.map(row => {
+    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
+    
+    let fecha = String(getCellValue("FECHA")).trim();
+    const año = fecha.slice(-4);
+    const mes = fecha.slice(3, 5);
+    const dia = fecha.slice(0, 2);
+    fecha = `${año}${mes}${dia}`;
 
-                    let tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '');
-                    tipoDoc = tipoDoc.slice(0, 3).padEnd(3, ' ');
+    let tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '');
+    tipoDoc = tipoDoc.slice(0, 3).padEnd(3, ' ');
 
-                    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
-                    const nro = String(getCellValue("NRO")).padStart(20, '0');
-                    const espacios = String(getCellValue("NRO")).padStart(20, '0');
-                    //const espacios = ' '.repeat(20);
-                    const cuitClienteCell = getCellValue("NRO_DOC");
-                    const tipoDocCliente = (cuitClienteCell === '11111111' ? '99' : '96');
-                    const cuitCliente = String(cuitClienteCell).replace(/-/g, '').padStart(20, '0');
-                    const nombreCliente = String(getCellValue("CLIENTE")).slice(0, 30).padEnd(30, ' ');
-                    const impTotal = String(getCellValue("IMP_TOTAL")).replace(/[.,]/g, '').padStart(15, '0');
-                    const ceros15 = '0'.repeat(15);
-                    const impIVA = String(getCellValue("IMP_IVA")).replace(/[.,]/g, '').padStart(15, '0');
-                    const ceros15_2 = '0'.repeat(15);
-                    const tipoMoneda = "PES";
-                    const valorFijo1 = "0001000000";
-                    const valorFijo2 = "1";
-                    const valorFijo3 = "0";
-                    const ceros15_3 = '0'.repeat(15);
-                    const fecha2 = fecha;
+    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
+    const nro = String(getCellValue("NRO")).padStart(20, '0');
+    const espacios = String(getCellValue("NRO")).padStart(20, '0');
+    //const espacios = ' '.repeat(20);
 
+    const cuitClienteCell = String(getCellValue("NRO_DOC")).replace(/-/g, '').trim();
+    let tipoDocCliente, cuitCliente;
+
+    if (cuitClienteCell === '11111111') {
+        // Venta global (consumidor final)
+        tipoDocCliente = '99';
+        cuitCliente = '00000000000'.padStart(20, '0');
+    } else if (cuitClienteCell.length === 11) {
+        // CUIT
+        tipoDocCliente = '80';
+        cuitCliente = cuitClienteCell.padStart(20, '0');
+    } else if (cuitClienteCell.length === 8) {
+        // DNI
+        tipoDocCliente = '96';
+        cuitCliente = cuitClienteCell.padStart(20, '0');
+    } else {
+        // Caso por defecto: lo tratamos como genérico
+        tipoDocCliente = '96';
+        cuitCliente = cuitClienteCell.padStart(20, '0');
+    }
+
+    const nombreCliente = String(getCellValue("CLIENTE")).slice(0, 30).padEnd(30, ' ');
+    const impTotal = String(getCellValue("IMP_TOTAL")).replace(/[.,]/g, '').padStart(15, '0');
+    const ceros15 = '0'.repeat(15);
+    const impIVA = String(getCellValue("IMP_IVA")).replace(/[.,]/g, '').padStart(15, '0');
+    const ceros15_2 = '0'.repeat(15);
+    const tipoMoneda = "PES";
+    const valorFijo1 = "0001000000";
+    const valorFijo2 = "1";
+    const valorFijo3 = "0";
+    const ceros15_3 = '0'.repeat(15);
+    const fecha2 = fecha;
                     return `${fecha}${tipoDoc}${ptoVenta}${nro}${espacios}${tipoDocCliente}${cuitCliente}${nombreCliente}${impTotal}${ceros15}${ceros15}${ceros15}${impIVA}${ceros15_2}${ceros15_2}${ceros15_2}${tipoMoneda}${valorFijo1}${valorFijo2}${valorFijo3}${ceros15_3}${fecha2}`;
                 }).join('\n');
                 
@@ -210,4 +228,5 @@
         }
     </script>
 </body>
+
 </html>
