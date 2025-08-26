@@ -206,27 +206,41 @@ const ventasTexto = globalDataRows.map(row => {
             }
             
             if (tipo === 'alicuotas' || tipo === 'ambos') {
-                const alicuotasTexto = globalDataRows.map(row => {
-                    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
-                    
-                    const tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '').slice(0, 3);
-                    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
-                    const nro = String(getCellValue("NRO")).padStart(20, '0');
-                    const impIVA = String(getCellValue("IMP_GRAVADO")).replace(/[.,]/g, '').padStart(15, '0');
-                    const porcIVA = String(getCellValue("PORC_IVA")).replace(/[.,]/g, '').padStart(4, '0');
-                    const impTotal = String(getCellValue("IMP_IVA")).replace(/[.,]/g, '').padStart(15, '0');
+const alicuotasTexto = globalDataRows.map(row => {
+    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
 
-                    return `${tipoDoc}${ptoVenta}${nro}${impIVA}${porcIVA}${impTotal}`;
-                }).join('\n');
-                 
-                if (tipo === 'ambos') {
-                    setTimeout(() => downloadFile(alicuotasTexto, "alicuotas.txt"), 500);
-                } else {
-                    downloadFile(alicuotasTexto, "alicuotas.txt");
-                }
+    const tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '').slice(0, 3);
+    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
+    const nro = String(getCellValue("NRO")).padStart(20, '0');
+    const impIVA = String(getCellValue("IMP_GRAVADO")).replace(/[.,]/g, '').padStart(15, '0');
+    
+    // --- Lógica del IVA agregada aquí ---
+    const ivaValue = String(getCellValue("PORC_IVA")).replace(',', '.');
+    const ivaMap = {
+        "0": "0003",
+        "10.5": "0004",
+        "21": "0005",
+        "27": "0006",
+        "5": "0008",
+        "2.5": "0009"
+    };
+    const porcIVA = ivaMap[ivaValue] || "0003";
+    // --- Fin de la lógica del IVA ---
+    
+    const impTotal = String(getCellValue("IMP_IVA")).replace(/[.,]/g, '').padStart(15, '0');
+
+    return `${tipoDoc}${ptoVenta}${nro}${impIVA}${porcIVA}${impTotal}`;
+}).join('\n');
+ 
+if (tipo === 'ambos') {
+    setTimeout(() => downloadFile(alicuotasTexto, "alicuotas.txt"), 500);
+} else {
+    downloadFile(alicuotasTexto, "alicuotas.txt");
+}
             }
         }
     </script>
 </body>
 
 </html>
+
