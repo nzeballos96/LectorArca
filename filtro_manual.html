@@ -20,18 +20,6 @@
     <a href="index.html"><button>Volver</button></a>
     <h1>Lectura de Archivo Excel</h1>
 
-  <!--  
-    <div class="input-fields">
-        <label for="codigoDocVendedor">Código de documento vendedor</label>
-        <input type="text" id="codigoDocVendedor" placeholder="Ej: 80">
-        
-        <label for="nombreApellido">Nombre y apellido</label>
-        <input type="text" id="nombreApellido" placeholder="Ej: Juan Pérez">
-
-        <label for="cuit">CUIT</label>
-        <input type="text" id="cuit" placeholder="Ej: 20-12345678-9">
-    </div>
--->
     <p>Selecciona un archivo .xls o .xlsx</p>
     <input type="file" id="archivoInput" accept=".xls,.xlsx">
     
@@ -149,56 +137,62 @@
         }
 
         function descargarTXT(tipo) {
+            if (!globalDataRows || globalDataRows.length === 0) {
+                alert("Primero selecciona un archivo Excel válido.");
+                return;
+            }
+
             if (tipo === 'ventas' || tipo === 'ambos') {
-const ventasTexto = globalDataRows.map(row => {
-    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
-    
-    let fecha = String(getCellValue("FECHA")).trim();
-    const año = fecha.slice(-4);
-    const mes = fecha.slice(3, 5);
-    const dia = fecha.slice(0, 2);
-    fecha = `${año}${mes}${dia}`;
+                const ventasTexto = globalDataRows.map(row => {
+                    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
+                    
+                    let fecha = String(getCellValue("FECHA")).trim();
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(fecha)) {
+                        const [dia, mes, año] = fecha.split("/");
+                        fecha = `${año}${mes}${dia}`;
+                    } else {
+                        fecha = "00000000";
+                    }
 
-    let tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '');
-    tipoDoc = tipoDoc.slice(0, 3).padEnd(3, ' ');
+                    let tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '');
+                    tipoDoc = tipoDoc.slice(0, 3).padEnd(3, ' ');
 
-    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
-    const nro = String(getCellValue("NRO")).padStart(20, '0');
-    const espacios = String(getCellValue("NRO")).padStart(20, '0');
-    //const espacios = ' '.repeat(20);
+                    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
+                    const nro = String(getCellValue("NRO")).padStart(20, '0');
+                    const espacios = String(getCellValue("NRO")).padStart(20, '0');
 
-    const cuitClienteCell = String(getCellValue("NRO_DOC")).replace(/-/g, '').trim();
-    let tipoDocCliente, cuitCliente;
+                    const cuitClienteCell = String(getCellValue("NRO_DOC")).replace(/-/g, '').trim();
+                    let tipoDocCliente, cuitCliente;
 
-    if (cuitClienteCell === '11111111') {
-        // Venta global (consumidor final)
-        tipoDocCliente = '99';
-        cuitCliente = '00000000000'.padStart(20, '0');
-    } else if (cuitClienteCell.length === 11) {
-        // CUIT
-        tipoDocCliente = '80';
-        cuitCliente = cuitClienteCell.padStart(20, '0');
-    } else if (cuitClienteCell.length === 8) {
-        // DNI
-        tipoDocCliente = '96';
-        cuitCliente = cuitClienteCell.padStart(20, '0');
-    } else {
-        // Caso por defecto: lo tratamos como genérico
-        tipoDocCliente = '96';
-        cuitCliente = cuitClienteCell.padStart(20, '0');
-    }
+                    if (cuitClienteCell === '11111111') {
+                        tipoDocCliente = '99';
+                        cuitCliente = '00000000000'.padStart(20, '0');
+                    } else if (cuitClienteCell.length === 11) {
+                        tipoDocCliente = '80';
+                        cuitCliente = cuitClienteCell.padStart(20, '0');
+                    } else if (cuitClienteCell.length === 8) {
+                        tipoDocCliente = '96';
+                        cuitCliente = cuitClienteCell.padStart(20, '0');
+                    } else {
+                        tipoDocCliente = '96';
+                        cuitCliente = cuitClienteCell.padStart(20, '0');
+                    }
 
-    const nombreCliente = String(getCellValue("CLIENTE")).slice(0, 30).padEnd(30, ' ');
-    const impTotal = String(getCellValue("IMP_TOTAL")).replace(/[.,]/g, '').padStart(15, '0');
-    const ceros15 = '0'.repeat(15);
-    const impIVA = String(getCellValue("IMP_IVA")).replace(/[.,]/g, '').padStart(15, '0');
-    const ceros15_2 = '0'.repeat(15);
-    const tipoMoneda = "PES";
-    const valorFijo1 = "0001000000";
-    const valorFijo2 = "1";
-    const valorFijo3 = "0";
-    const ceros15_3 = '0'.repeat(15);
-    const fecha2 = fecha;
+                    const nombreCliente = String(getCellValue("CLIENTE")).slice(0, 30).padEnd(30, ' ');
+
+                    // Multiplicados x100 y con ceros
+                    const impTotal = String(Math.round(parseFloat(getCellValue("IMP_TOTAL") || 0) * 100)).padStart(15, '0');
+                    const ceros15 = '0'.repeat(15);
+                    const impIVA = String(Math.round(parseFloat(getCellValue("IMP_IVA") || 0) * 100)).padStart(15, '0');
+                    const ceros15_2 = '0'.repeat(15);
+
+                    const tipoMoneda = "PES";
+                    const valorFijo1 = "0001000000";
+                    const valorFijo2 = "1";
+                    const valorFijo3 = "0";
+                    const ceros15_3 = '0'.repeat(15);
+                    const fecha2 = fecha;
+
                     return `${fecha}${tipoDoc}${ptoVenta}${nro}${espacios}${tipoDocCliente}${cuitCliente}${nombreCliente}${impTotal}${ceros15}${ceros15}${ceros15}${impIVA}${ceros15_2}${ceros15_2}${ceros15_2}${tipoMoneda}${valorFijo1}${valorFijo2}${valorFijo3}${ceros15_3}${fecha2}`;
                 }).join('\n');
                 
@@ -206,41 +200,39 @@ const ventasTexto = globalDataRows.map(row => {
             }
             
             if (tipo === 'alicuotas' || tipo === 'ambos') {
-const alicuotasTexto = globalDataRows.map(row => {
-    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
+                const alicuotasTexto = globalDataRows.map(row => {
+                    const getCellValue = (header) => row[globalHeaders.indexOf(header)] || "";
 
-    const tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '').slice(0, 3);
-    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
-    const nro = String(getCellValue("NRO")).padStart(20, '0');
-    const impIVA = String(getCellValue("IMP_GRAVADO")).replace(/[.,]/g, '').padStart(15, '0');
-    
-    // --- Lógica del IVA agregada aquí ---
-    const ivaValue = String(getCellValue("PORC_IVA")).replace(',', '.');
-    const ivaMap = {
-        "0": "0003",
-        "10.5": "0004",
-        "21": "0005",
-        "27": "0006",
-        "5": "0008",
-        "2.5": "0009"
-    };
-    const porcIVA = ivaMap[ivaValue] || "0003";
-    // --- Fin de la lógica del IVA ---
-    
-    const impTotal = String(getCellValue("IMP_IVA")).replace(/[.,]/g, '').padStart(15, '0');
+                    const tipoDoc = String(getCellValue("TIPO_DOC")).replace(/[^0-9]/g, '').slice(0, 3);
+                    const ptoVenta = String(getCellValue("PTO_VENTA")).padStart(5, '0');
+                    const nro = String(getCellValue("NRO")).padStart(20, '0');
 
-    return `${tipoDoc}${ptoVenta}${nro}${impIVA}${porcIVA}${impTotal}`;
-}).join('\n');
- 
-if (tipo === 'ambos') {
-    setTimeout(() => downloadFile(alicuotasTexto, "alicuotas.txt"), 500);
-} else {
-    downloadFile(alicuotasTexto, "alicuotas.txt");
-}
+                    // Multiplicados x100 y con ceros
+                    const impIVA = String(Math.round(parseFloat(getCellValue("IMP_GRAVADO") || 0) * 100)).padStart(15, '0');
+                    
+                    const ivaValue = String(getCellValue("PORC_IVA")).replace(',', '.');
+                    const ivaMap = {
+                        "0": "0003",
+                        "10.5": "0004",
+                        "21": "0005",
+                        "27": "0006",
+                        "5": "0008",
+                        "2.5": "0009"
+                    };
+                    const porcIVA = ivaMap[ivaValue] || "0003";
+
+                    const impTotal = String(Math.round(parseFloat(getCellValue("IMP_IVA") || 0) * 100)).padStart(15, '0');
+
+                    return `${tipoDoc}${ptoVenta}${nro}${impIVA}${porcIVA}${impTotal}`;
+                }).join('\n');
+            
+                if (tipo === 'ambos') {
+                    setTimeout(() => downloadFile(alicuotasTexto, "alicuotas.txt"), 500);
+                } else {
+                    downloadFile(alicuotasTexto, "alicuotas.txt");
+                }
             }
         }
     </script>
 </body>
-
 </html>
-
